@@ -20,8 +20,6 @@ body {
   color: var(--white);
   min-height: 100vh;
   flex-direction: column;
-  overflow-y: scroll;
-  overflow-x: hidden;  
 }
 
 .home-container {
@@ -30,6 +28,8 @@ body {
   margin: 0 auto;
   padding: 1rem;
   flex-grow: 1;
+  overflow-y: scroll;
+  overflow-x: hidden;  
 }
 
 /* Header Section */
