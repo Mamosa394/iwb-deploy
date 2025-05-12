@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import "../styles/SalesDashboard.css";
+import "../styles/salesdashboard.css";
 import { Line } from "react-chartjs-2";
 import {
   Chart,
