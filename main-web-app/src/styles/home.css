@@ -19,7 +19,6 @@ body {
   background-color: var(--dark-bg);
   color: var(--white);
   min-height: 100vh;
-  display: flex;
   flex-direction: column;
 }
 
@@ -28,9 +27,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
-  flex-grow: 1;
-  overflow-y: scroll;
-  overflow-x: hidden;  
+  flex-grow: 1; 
 }
 
 /* Header Section */
