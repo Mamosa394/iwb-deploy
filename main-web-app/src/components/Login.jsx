@@ -19,19 +19,11 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    role: "client", // default role
+    role: "client", // Default role
+    roleCode: "", // Default role code
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Hardcoded login credentials and roles
-  const hardcodedUsers = [
-    { email: "admin@example.com", password: "admin123", role: "admin" },
-    { email: "sales@example.com", password: "sales123", role: "sales" },
-    { email: "finance@example.com", password: "finance123", role: "finance" },
-    { email: "investor@example.com", password: "investor123", role: "investor" },
-    { email: "client@example.com", password: "client123", role: "client" },
-  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,20 +35,12 @@ const Login = () => {
     setLoading(true);
     setError("");
 
-    // Simulate login check
-    const user = hardcodedUsers.find(
-      (user) =>
-        user.email === formData.email &&
-        user.password === formData.password &&
-        user.role === formData.role
-    );
-
-    if (user) {
-      // Redirect based on role
-      localStorage.setItem("user", JSON.stringify(user));
-      redirectBasedOnRole(user.role);
+    // Hardcoded check for roles based on email, password, role selection, and role code
+    if (formData.email && formData.password && formData.role && formData.roleCode) {
+      // If email, password, role, and roleCode exist, proceed to redirect based on role
+      redirectBasedOnRole(formData.role);
     } else {
-      setError("Invalid email, password, or role. Please try again.");
+      setError("Please fill in all fields correctly.");
       setLoading(false);
     }
   };
@@ -64,19 +48,27 @@ const Login = () => {
   const redirectBasedOnRole = (role) => {
     switch (role) {
       case "admin":
-        navigate("/admin-dashboard");
+        if (formData.roleCode === "ADMIN-2025") navigate("/admin-dashboard");
+        else setError("Invalid Admin Code.");
         break;
       case "sales":
-        navigate("/sales-dashboard");
+        if (formData.roleCode === "SALES-PERSONNEL") navigate("/sales-dashboard");
+        else setError("Invalid Sales Code.");
         break;
       case "finance":
-        navigate("/income-statements");
+        if (formData.roleCode === "FINANCE-PERSONNEL") navigate("/income-statements");
+        else setError("Invalid Finance Code.");
         break;
       case "investor":
-        navigate("/net-income");
+        if (formData.roleCode === "INVESTOR-CODE") navigate("/net-income");
+        else setError("Invalid Investor Code.");
+        break;
+      case "client":
+        navigate("/home-page");
         break;
       default:
-        navigate("/home-page");
+        setError("Invalid role selection.");
+        setLoading(false);
     }
   };
 
@@ -152,6 +144,22 @@ const Login = () => {
                     <option value="investor">Investor</option>
                   </select>
                 </div>
+
+                {/* Role-specific code field */}
+                {formData.role !== "client" && (
+                  <div className="login-page-input-wrapper">
+                    <FaLock className="login-page-input-icon" />
+                    <input
+                      type="text"
+                      className="login-page-input"
+                      name="roleCode"
+                      value={formData.roleCode}
+                      onChange={handleChange}
+                      placeholder="Enter Role Code"
+                      required
+                    />
+                  </div>
+                )}
 
                 <button
                   type="submit"
