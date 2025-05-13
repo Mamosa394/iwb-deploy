@@ -70,7 +70,7 @@ const Login = () => {
         navigate("/income-statements", { state: { canEdit: false } });
         break;
       default:
-        navigate("/");
+        navigate("/home-page");
     }
   };
 
