@@ -78,6 +78,9 @@ const Login = () => {
 
   const redirectBasedOnRole = (role) => {
     switch(role) {
+      case "client":
+        navigate("/home-page"); // Matches brief's "developer" terminology
+        break;
       case "admin":
         navigate("/developer-dashboard"); // Matches brief's "developer" terminology
         break;
