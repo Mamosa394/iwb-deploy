@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaUser, FaEnvelope, FaLock, FaShieldAlt } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaLock, FaKey } from "react-icons/fa";
 import "../styles/SignUp.css";
 import "../styles/LoadingScreen.css";
 import robotImage from "/images/ROBOT.png";
@@ -9,37 +9,52 @@ import logo from "/images/logo.jpg";
 
 const LoadingScreen = () => (
   <div className="loading-screen">
-    <div className="loader">
-      <div></div>
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>
+    <div className="loader"><div></div><div></div><div></div><div></div></div>
     <p>Signing you up, please wait...</p>
   </div>
 );
 
 const SignUp = () => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
-    adminCode: "",
-    role: "User", // Default role is User
+    role: "client",
+    registrationCode: ""
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [roleLimits, setRoleLimits] = useState({ current: {}, max: {} });
+  const [showCodeField, setShowCodeField] = useState(false);
 
-  // Handle input changes
+  const PRIVILEGED_ROLES = ["sales", "finance", "admin", "iwc"];
+
+  useEffect(() => {
+    // Fetch role limits from backend
+    const fetchRoleLimits = async () => {
+      try {
+        const res = await axios.get("https://backend-8-gn1i.onrender.com/api/auth/role-limits");
+        setRoleLimits(res.data);
+      } catch (err) {
+        console.error("Failed to fetch role limits.");
+      }
+    };
+
+    fetchRoleLimits();
+  }, []);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
 
-  // Handle role selection change
-  const handleRoleChange = (e) => {
-    setFormData({ ...formData, role: e.target.value, adminCode: "" }); // Reset adminCode when switching role
+    // Show/hide registration code field based on role selection
+    if (name === "role") {
+      setShowCodeField(PRIVILEGED_ROLES.includes(value));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -48,30 +63,41 @@ const SignUp = () => {
     setError("");
     setSuccess("");
 
-    try {
-      const res = await axios.post(
-        "https://backend-8-gn1i.onrender.com/api/auth/signup",
-        {
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role.toLowerCase(),
-          adminCode: formData.role === "Admin" ? formData.adminCode : undefined, // Send adminCode only for Admin role
-        }
-      );
+    // Validate registration code for privileged roles
+    if (PRIVILEGED_ROLES.includes(formData.role) && !formData.registrationCode) {
+      setError("Registration code is required for this role");
+      setLoading(false);
+      return;
+    }
 
-      setSuccess(res.data.message);
-      setTimeout(() => navigate("/login"), 2000);
+    try {
+      const res = await axios.post("https://backend-8-gn1i.onrender.com/api/auth/signup", formData);
+      setSuccess(res.data.message || "Account created successfully!");
+      
+      if (res.data.requiresMFA) {
+        setTimeout(() => navigate("/setup-mfa"), 2000);
+      } else {
+        setTimeout(() => navigate("/login"), 2000);
+      }
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.message || "Registration failed. Please try again.";
-      setError(errorMessage);
+      const serverMessage = err.response?.data?.error || "Something went wrong. Please try again.";
+
+      // Special handling for different error types
+      if (serverMessage.includes("Maximum number")) {
+        setError("That role is currently full. Please choose a different one.");
+      } else if (serverMessage.includes("registration code")) {
+        setError("Invalid registration code for this role");
+      } else {
+        setError(serverMessage);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) return <LoadingScreen />;
+
+  const roles = ["client", "admin", "sales", "finance", "investor", "iwc"];
 
   return (
     <div className="signup-ui-container">
@@ -86,11 +112,7 @@ const SignUp = () => {
         <div className="signup-form-box">
           <div className="glow-border"></div>
 
-          <h2>
-            {formData.role === "Admin"
-              ? "Admin Registration"
-              : "Create an account"}
-          </h2>
+          <h2>Create an Account</h2>
 
           <div className="logo-wrapper">
             <img src={logo} alt="logo" className="logo" />
@@ -107,13 +129,12 @@ const SignUp = () => {
           {success && <div className="alert success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
-            {/* Username Input */}
             <div className="input-wrapper">
               <FaUser className="input-icon" />
               <input
                 type="text"
                 name="username"
-                placeholder="Username"
+                placeholder="Username (min 3 characters)"
                 value={formData.username}
                 onChange={handleChange}
                 className="sign-input"
@@ -123,7 +144,6 @@ const SignUp = () => {
               />
             </div>
 
-            {/* Email Input */}
             <div className="input-wrapper">
               <FaEnvelope className="input-icon" />
               <input
@@ -137,7 +157,6 @@ const SignUp = () => {
               />
             </div>
 
-            {/* Password Input */}
             <div className="input-wrapper">
               <FaLock className="input-icon" />
               <input
@@ -152,41 +171,49 @@ const SignUp = () => {
               />
             </div>
 
-            {/* Admin Code (Only for Admin Role) */}
-            {formData.role === "Admin" && (
-              <div className="input-wrapper">
-                <FaShieldAlt className="input-icon" />
-                <input
-                  type="password"
-                  name="adminCode"
-                  placeholder="Admin Registration Code"
-                  value={formData.adminCode}
-                  onChange={handleChange}
-                  className="sign-input"
-                  required
-                />
-              </div>
-            )}
-
-            {/* Role Selection Dropdown */}
-            <div className="role-selection">
-              <label htmlFor="role">Select Role</label>
+            <div className="input-wrapper">
+              <label htmlFor="role">Select Role:</label>
               <select
-                id="role"
                 name="role"
                 value={formData.role}
-                onChange={handleRoleChange}
-                className="role-dropdown"
+                onChange={handleChange}
+                className="sign-input"
                 required
               >
-                <option value="User">User</option>
-                <option value="Developer">Developer</option>
-                <option value="Admin">Admin</option>
-                <option value="Investor">Investor</option>
+                {roles.map((role) => {
+                  const current = roleLimits.current?.[role] ?? 0;
+                  const max = roleLimits.max?.[role] ?? Infinity;
+                  const isFull = current >= max;
+
+                  return (
+                    <option key={role} value={role} disabled={isFull}>
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                      {isFull ? " (Full)" : ""}
+                      {PRIVILEGED_ROLES.includes(role) && !isFull ? " (Code Required)" : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
-            {/* Terms and Conditions */}
+            {showCodeField && (
+              <div className="input-wrapper">
+                <FaKey className="input-icon" />
+                <input
+                  type="password"
+                  name="registrationCode"
+                  placeholder="Registration Code"
+                  value={formData.registrationCode}
+                  onChange={handleChange}
+                  className="sign-input"
+                  required={showCodeField}
+                />
+                <small className="code-hint">
+                  Contact your administrator for the registration code
+                </small>
+              </div>
+            )}
+
             <div className="terms">
               <input type="checkbox" required className="tick" id="terms" />
               <label htmlFor="terms">I agree to the Terms & Conditions</label>
@@ -198,7 +225,7 @@ const SignUp = () => {
               disabled={loading}
               aria-busy={loading}
             >
-              {formData.role === "Admin" ? "Register Admin" : "Create Account"}
+              Create Account
             </button>
           </form>
         </div>
