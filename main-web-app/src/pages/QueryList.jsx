@@ -18,7 +18,7 @@ const QueryList = () => {
 
   const updateStatus = async (id, newStatus) => {
     try {
-      await axios.put(`http://localhost:5000/api/client-queries/${id}`, { status: newStatus });
+      await axios.put(`https://backend-8-gn1i.onrender.com/api/client-queries/${id}`, { status: newStatus });
       fetchQueries(); // Refresh list
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -27,7 +27,7 @@ const QueryList = () => {
 
   const deleteQuery = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/client-queries/${id}`);
+      await axios.delete(`https://backend-8-gn1i.onrender.com/api/client-queries/${id}`);
       setQueries(prev => prev.filter(q => q._id !== id));
     } catch (err) {
       console.error('Failed to delete query:', err);

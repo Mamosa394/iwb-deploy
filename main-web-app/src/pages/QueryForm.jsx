@@ -49,7 +49,7 @@ const QueryForm = () => {
     setStatusMessage("Submitting...");
 
     try {
-      const res = await fetch("http://localhost:5000/api/client-queries", {
+      const res = await fetch("https://backend-8-gn1i.onrender.com/api/client-queries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
