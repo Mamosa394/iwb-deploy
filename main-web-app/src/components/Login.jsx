@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "../styles/Login.css";
 import "../styles/LoadingScreen.css";
 import robotImage from "/images/ROBOT.png";
-import { FaEnvelope, FaLock, FaUserTag } from "react-icons/fa";
+import { FaEnvelope, FaLock } from "react-icons/fa";
 
 const LoadingScreen = () => (
   <div className="loading-screen">
@@ -16,12 +17,7 @@ const LoadingScreen = () => (
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    role: "client", // Default role
-    roleCode: "", // Default role code
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -30,17 +26,31 @@ const Login = () => {
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // Hardcoded check for roles based on email, password, role selection, and role code
-    if (formData.email && formData.password && formData.role && formData.roleCode) {
-      // If email, password, role, and roleCode exist, proceed to redirect based on role
-      redirectBasedOnRole(formData.role);
-    } else {
-      setError("Please fill in all fields correctly.");
+    try {
+      const response = await axios.post(
+        "https://backend-8-gn1i.onrender.com/api/auth/login",
+        {
+          email: formData.email,
+          password: formData.password
+        }
+      );
+
+      const { user } = response.data;
+      localStorage.setItem("user", JSON.stringify(user));
+      redirectBasedOnRole(user.role);
+
+    } catch (err) {
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("An error occurred. Please try again.");
+      }
+    } finally {
       setLoading(false);
     }
   };
@@ -48,27 +58,19 @@ const Login = () => {
   const redirectBasedOnRole = (role) => {
     switch (role) {
       case "admin":
-        if (formData.roleCode === "ADMIN-2025") navigate("/admin-dashboard");
-        else setError("Invalid Admin Code.");
+        navigate("/developer-dashboard");
         break;
       case "sales":
-        if (formData.roleCode === "SALES-PERSONNEL") navigate("/sales-dashboard");
-        else setError("Invalid Sales Code.");
+        navigate("/sales-dashboard", { state: { canEdit: true } });
         break;
       case "finance":
-        if (formData.roleCode === "FINANCE-PERSONNEL") navigate("/income-statements");
-        else setError("Invalid Finance Code.");
+        navigate("/income-statements", { state: { canEdit: true } });
         break;
       case "investor":
-        if (formData.roleCode === "INVESTOR-CODE") navigate("/net-income");
-        else setError("Invalid Investor Code.");
-        break;
-      case "client":
-        navigate("/home-page");
+        navigate("/income-statements", { state: { canEdit: false } });
         break;
       default:
-        setError("Invalid role selection.");
-        setLoading(false);
+        navigate("/home-page");
     }
   };
 
@@ -127,39 +129,6 @@ const Login = () => {
                     required
                   />
                 </div>
-
-                <div className="login-page-input-wrapper">
-                  <FaUserTag className="login-page-input-icon" />
-                  <select
-                    name="role"
-                    className="login-page-input"
-                    value={formData.role}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="client">Client</option>
-                    <option value="sales">Sales</option>
-                    <option value="finance">Finance</option>
-                    <option value="admin">Admin</option>
-                    <option value="investor">Investor</option>
-                  </select>
-                </div>
-
-                {/* Role-specific code field */}
-                {formData.role !== "client" && (
-                  <div className="login-page-input-wrapper">
-                    <FaLock className="login-page-input-icon" />
-                    <input
-                      type="text"
-                      className="login-page-input"
-                      name="roleCode"
-                      value={formData.roleCode}
-                      onChange={handleChange}
-                      placeholder="Enter Role Code"
-                      required
-                    />
-                  </div>
-                )}
 
                 <button
                   type="submit"
