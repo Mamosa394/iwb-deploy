@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import "../styles/Login.css";
 import "../styles/LoadingScreen.css";
 import robotImage from "/images/ROBOT.png";
@@ -20,48 +19,44 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    role: "client", // default
+    role: "client", // default role
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Hardcoded login credentials and roles
+  const hardcodedUsers = [
+    { email: "admin@example.com", password: "admin123", role: "admin" },
+    { email: "sales@example.com", password: "sales123", role: "sales" },
+    { email: "finance@example.com", password: "finance123", role: "finance" },
+    { email: "investor@example.com", password: "investor123", role: "investor" },
+    { email: "client@example.com", password: "client123", role: "client" },
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    try {
-      const response = await axios.post(
-        "https://backend-8-gn1i.onrender.com/api/auth/login",
-        {
-          email: formData.email,
-          password: formData.password,
-        }
-      );
+    // Simulate login check
+    const user = hardcodedUsers.find(
+      (user) =>
+        user.email === formData.email &&
+        user.password === formData.password &&
+        user.role === formData.role
+    );
 
-      const { user } = response.data;
-
-      // Confirm selected role matches the actual user role
-      if (user.role !== formData.role) {
-        setError(`Role mismatch. You are registered as "${user.role}".`);
-        setLoading(false);
-        return;
-      }
-
+    if (user) {
+      // Redirect based on role
       localStorage.setItem("user", JSON.stringify(user));
       redirectBasedOnRole(user.role);
-
-    } catch (err) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError("An error occurred. Please try again.");
-      }
+    } else {
+      setError("Invalid email, password, or role. Please try again.");
       setLoading(false);
     }
   };
