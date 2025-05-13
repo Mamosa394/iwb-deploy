@@ -4,7 +4,7 @@ import axios from "axios";
 import "../styles/Login.css";
 import "../styles/LoadingScreen.css";
 import robotImage from "/images/ROBOT.png";
-import { FaEnvelope, FaLock, FaShieldAlt } from "react-icons/fa";
+import { FaEnvelope, FaLock } from "react-icons/fa";
 
 const LoadingScreen = () => (
   <div className="loading-screen">
@@ -17,15 +17,9 @@ const LoadingScreen = () => (
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ 
-    email: "", 
-    password: "",
-    mfaCode: "" 
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [requiresMFA, setRequiresMFA] = useState(false);
-  const [mfaSetupRequired, setMfaSetupRequired] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,29 +36,16 @@ const Login = () => {
         "https://backend-8-gn1i.onrender.com/api/auth/login",
         {
           email: formData.email,
-          password: formData.password,
-          ...(requiresMFA && { mfaCode: formData.mfaCode })
+          password: formData.password
         }
       );
 
-      // Handle MFA setup requirement
-      if (response.data.requiresMfaSetup) {
-        setMfaSetupRequired(true);
-        navigate("/setup-mfa", { state: { email: formData.email } });
-        return;
-      }
-
-      // Store user info only (no token)
       const { user } = response.data;
       localStorage.setItem("user", JSON.stringify(user));
-
-      // Redirect based on role with proper permissions
       redirectBasedOnRole(user.role);
-      
+
     } catch (err) {
-      if (err.response?.status === 206) {
-        setRequiresMFA(true);
-      } else if (err.response?.data?.error) {
+      if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else {
         setError("An error occurred. Please try again.");
@@ -75,7 +56,7 @@ const Login = () => {
   };
 
   const redirectBasedOnRole = (role) => {
-    switch(role) {
+    switch (role) {
       case "admin":
         navigate("/developer-dashboard");
         break;
@@ -149,40 +130,17 @@ const Login = () => {
                   />
                 </div>
 
-                {requiresMFA && (
-                  <div className="login-page-input-wrapper">
-                    <FaShieldAlt className="login-page-input-icon" />
-                    <input
-                      type="text"
-                      className="login-page-input"
-                      name="mfaCode"
-                      value={formData.mfaCode}
-                      onChange={handleChange}
-                      placeholder="MFA Code"
-                      required
-                    />
-                    <small className="mfa-hint">
-                      Check your authenticator app for the 6-digit code
-                    </small>
-                  </div>
-                )}
-
                 <button
                   type="submit"
                   className="login-page-signup-btn"
                   disabled={loading}
                 >
-                  {requiresMFA ? "Verify MFA" : "Login"}
+                  Login
                 </button>
               </form>
 
               <div className="login-page-footer">
                 <a href="/forgot-password">Forgot password?</a>
-                {requiresMFA && (
-                  <a href="/recover-mfa" className="mfa-recovery-link">
-                    Can't access your MFA device?
-                  </a>
-                )}
               </div>
             </div>
           </div>
