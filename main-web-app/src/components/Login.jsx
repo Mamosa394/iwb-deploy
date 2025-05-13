@@ -54,17 +54,15 @@ const Login = () => {
         return;
       }
 
-      // Store user info and token
-      const { user, token } = response.data;
+      // Store user info only (no token)
+      const { user } = response.data;
       localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("token", token);
 
       // Redirect based on role with proper permissions
       redirectBasedOnRole(user.role);
       
     } catch (err) {
       if (err.response?.status === 206) {
-        // Partial content - MFA required but not provided
         setRequiresMFA(true);
       } else if (err.response?.data?.error) {
         setError(err.response.data.error);
@@ -79,7 +77,7 @@ const Login = () => {
   const redirectBasedOnRole = (role) => {
     switch(role) {
       case "admin":
-        navigate("/developer-dashboard"); // Matches brief's "developer" terminology
+        navigate("/developer-dashboard");
         break;
       case "sales":
         navigate("/sales-dashboard", { state: { canEdit: true } });
@@ -88,8 +86,10 @@ const Login = () => {
         navigate("/income-statements", { state: { canEdit: true } });
         break;
       case "investor":
-        navigate("/income-statements", { state: { canEdit: false } }); // Read-only
+        navigate("/income-statements", { state: { canEdit: false } });
         break;
+      default:
+        navigate("/");
     }
   };
 
