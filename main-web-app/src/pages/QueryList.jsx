@@ -9,7 +9,7 @@ const QueryList = () => {
 
   const fetchQueries = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/client-queries');
+      const res = await axios.get('https://backend-8-gn1i.onrender.com/api/client-queries');
       setQueries(res.data);
     } catch (err) {
       console.error('Failed to fetch queries:', err);
