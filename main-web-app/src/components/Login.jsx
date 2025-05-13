@@ -4,7 +4,7 @@ import axios from "axios";
 import "../styles/Login.css";
 import "../styles/LoadingScreen.css";
 import robotImage from "/images/ROBOT.png";
-import { FaEnvelope, FaLock } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaUserTag } from "react-icons/fa";
 
 const LoadingScreen = () => (
   <div className="loading-screen">
@@ -17,7 +17,11 @@ const LoadingScreen = () => (
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    role: "client", // default
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -36,11 +40,19 @@ const Login = () => {
         "https://backend-8-gn1i.onrender.com/api/auth/login",
         {
           email: formData.email,
-          password: formData.password
+          password: formData.password,
         }
       );
 
       const { user } = response.data;
+
+      // Confirm selected role matches the actual user role
+      if (user.role !== formData.role) {
+        setError(`Role mismatch. You are registered as "${user.role}".`);
+        setLoading(false);
+        return;
+      }
+
       localStorage.setItem("user", JSON.stringify(user));
       redirectBasedOnRole(user.role);
 
@@ -50,7 +62,6 @@ const Login = () => {
       } else {
         setError("An error occurred. Please try again.");
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -58,16 +69,16 @@ const Login = () => {
   const redirectBasedOnRole = (role) => {
     switch (role) {
       case "admin":
-        navigate("/developer-dashboard");
+        navigate("/admin-dashboard");
         break;
       case "sales":
-        navigate("/sales-dashboard", { state: { canEdit: true } });
+        navigate("/sales-dashboard");
         break;
       case "finance":
-        navigate("/income-statements", { state: { canEdit: true } });
+        navigate("/income-statements");
         break;
       case "investor":
-        navigate("/income-statements", { state: { canEdit: false } });
+        navigate("/net-income");
         break;
       default:
         navigate("/home-page");
@@ -128,6 +139,23 @@ const Login = () => {
                     placeholder="Password"
                     required
                   />
+                </div>
+
+                <div className="login-page-input-wrapper">
+                  <FaUserTag className="login-page-input-icon" />
+                  <select
+                    name="role"
+                    className="login-page-input"
+                    value={formData.role}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="client">Client</option>
+                    <option value="sales">Sales</option>
+                    <option value="finance">Finance</option>
+                    <option value="admin">Admin</option>
+                    <option value="investor">Investor</option>
+                  </select>
                 </div>
 
                 <button
